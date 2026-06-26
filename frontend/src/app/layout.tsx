@@ -1,23 +1,22 @@
 import type { ReactNode } from 'react';
 import type { Metadata } from 'next';
+import { Vazirmatn } from 'next/font/google';
 import './globals.css';
 
+const vazirmatn = Vazirmatn({
+  subsets: ['arabic'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
-  title: 'منوی کافه',
-  description: 'منوی آنلاین کافه — مشاهده آیتم‌ها و قیمت‌ها',
+  title: 'Coffee Menu',
+  description: 'Online coffee menu',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="fa" dir="rtl">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang="fa" dir="rtl" className={vazirmatn.className}>
       <body>{children}</body>
     </html>
   );
