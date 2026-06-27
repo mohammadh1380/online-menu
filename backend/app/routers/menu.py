@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 from app.auth import get_current_admin
 from app.config import settings
 from app.database import get_db
-from app.models import MenuItem
+from app.models import Branch, MenuItem
 from app.schemas import MenuItemOut
 
 router = APIRouter(prefix="/api", tags=["menu"])
@@ -22,17 +22,11 @@ _ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 async def _save_upload(file: UploadFile) -> str:
     suffix = Path(file.filename or "").suffix.lower()
     if suffix not in _ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=400,
-            detail="فقط فرمت‌های JPG، PNG و WebP مجاز هستند",
-        )
+        raise HTTPException(status_code=400, detail="فقط فرمت‌های JPG، PNG و WebP مجاز هستند")
 
     content = await file.read()
     if len(content) > settings.max_file_size_bytes:
-        raise HTTPException(
-            status_code=400,
-            detail=f"حجم فایل نباید بیشتر از {settings.MAX_FILE_SIZE_MB}MB باشد",
-        )
+        raise HTTPException(status_code=400, detail=f"حجم فایل نباید بیشتر از {settings.MAX_FILE_SIZE_MB}MB باشد")
 
     filename = f"{uuid.uuid4()}{suffix}"
     dest = settings.UPLOAD_DIR / filename
@@ -40,7 +34,6 @@ async def _save_upload(file: UploadFile) -> str:
 
     async with aiofiles.open(dest, "wb") as f:
         await f.write(content)
-
     return filename
 
 
@@ -54,7 +47,7 @@ def _delete_photo(filename: Optional[str]) -> None:
 async def _load_item(db: AsyncSession, item_id: int) -> MenuItem:
     result = await db.execute(
         select(MenuItem)
-        .options(selectinload(MenuItem.category))
+        .options(selectinload(MenuItem.category), selectinload(MenuItem.branches))
         .where(MenuItem.id == item_id)
     )
     item = result.scalar_one_or_none()
@@ -63,19 +56,29 @@ async def _load_item(db: AsyncSession, item_id: int) -> MenuItem:
     return item
 
 
+async def _resolve_branches(db: AsyncSession, branch_ids: list[int]) -> list[Branch]:
+    if not branch_ids:
+        return []
+    result = await db.execute(select(Branch).where(Branch.id.in_(branch_ids)))
+    return result.scalars().all()
+
+
 # ── Public endpoints ──────────────────────────────────────────────────────────
 
 @router.get("/menu", response_model=list[MenuItemOut])
 async def get_menu(
+    branch_id: Optional[int] = None,
     category_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
 ) -> list[MenuItem]:
     query = (
         select(MenuItem)
-        .options(selectinload(MenuItem.category))
+        .options(selectinload(MenuItem.category), selectinload(MenuItem.branches))
         .where(MenuItem.is_available == True)  # noqa: E712
         .order_by(MenuItem.category_id, MenuItem.name)
     )
+    if branch_id:
+        query = query.where(MenuItem.branches.any(Branch.id == branch_id))
     if category_id:
         query = query.where(MenuItem.category_id == category_id)
     result = await db.execute(query)
@@ -90,10 +93,9 @@ async def get_menu(
     dependencies=[Depends(get_current_admin)],
 )
 async def admin_get_menu(db: AsyncSession = Depends(get_db)) -> list[MenuItem]:
-    """Return all items (including unavailable) for the admin panel."""
     result = await db.execute(
         select(MenuItem)
-        .options(selectinload(MenuItem.category))
+        .options(selectinload(MenuItem.category), selectinload(MenuItem.branches))
         .order_by(MenuItem.category_id, MenuItem.name)
     )
     return result.scalars().all()
@@ -110,6 +112,7 @@ async def create_item(
     category_id: int = Form(...),
     description: Optional[str] = Form(None),
     is_available: bool = Form(True),
+    branch_ids: list[int] = Form(default=[]),
     photo: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db),
 ) -> MenuItem:
@@ -125,6 +128,7 @@ async def create_item(
         is_available=is_available,
         photo=photo_filename,
     )
+    item.branches = await _resolve_branches(db, branch_ids)
     db.add(item)
     await db.commit()
     return await _load_item(db, item.id)
@@ -142,6 +146,7 @@ async def update_item(
     category_id: Optional[int] = Form(None),
     description: Optional[str] = Form(None),
     is_available: Optional[bool] = Form(None),
+    branch_ids: Optional[list[int]] = Form(default=None),
     photo: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db),
 ) -> MenuItem:
@@ -157,6 +162,8 @@ async def update_item(
         item.category_id = category_id
     if is_available is not None:
         item.is_available = is_available
+    if branch_ids is not None:
+        item.branches = await _resolve_branches(db, branch_ids)
     if photo and photo.filename:
         _delete_photo(item.photo)
         item.photo = await _save_upload(photo)

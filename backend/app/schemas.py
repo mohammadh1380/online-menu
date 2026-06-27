@@ -4,7 +4,17 @@ from typing import Optional
 from pydantic import BaseModel, field_validator
 
 
-# ── Category ─────────────────────────────────────────────────────────────────
+# ── Branch ────────────────────────────────────────────────────────────────────
+
+class BranchOut(BaseModel):
+    id: int
+    name: str
+    slug: str
+
+    model_config = {"from_attributes": True}
+
+
+# ── Category ──────────────────────────────────────────────────────────────────
 
 class CategoryBase(BaseModel):
     name: str
@@ -45,6 +55,7 @@ class MenuItemOut(MenuItemBase):
     created_at: datetime
     updated_at: datetime
     category: Optional[CategoryOut] = None
+    branches: list[BranchOut] = []
 
     model_config = {"from_attributes": True}
 
