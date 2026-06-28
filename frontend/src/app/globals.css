@@ -2,6 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Sahel';
+  src: url('https://cdn.fontcdn.ir/Font/Persian/Sahel/Sahel.eot');
+  src: url('https://cdn.fontcdn.ir/Font/Persian/Sahel/Sahel.eot?#iefix') format('embedded-opentype'),
+       url('https://cdn.fontcdn.ir/Font/Persian/Sahel/Sahel.woff2') format('woff2'),
+       url('https://cdn.fontcdn.ir/Font/Persian/Sahel/Sahel.woff') format('woff'),
+       url('https://cdn.fontcdn.ir/Font/Persian/Sahel/Sahel.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Sahel';
+  src: url('https://cdn.fontcdn.ir/Font/Persian/Sahel/Sahel-Bold.eot');
+  src: url('https://cdn.fontcdn.ir/Font/Persian/Sahel/Sahel-Bold.eot?#iefix') format('embedded-opentype'),
+       url('https://cdn.fontcdn.ir/Font/Persian/Sahel/Sahel-Bold.woff2') format('woff2'),
+       url('https://cdn.fontcdn.ir/Font/Persian/Sahel/Sahel-Bold.woff') format('woff'),
+       url('https://cdn.fontcdn.ir/Font/Persian/Sahel/Sahel-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -11,8 +35,9 @@ html {
 }
 
 body {
-  font-family: 'Vazirmatn', system-ui, sans-serif;
-  background: #0a0603;
+  font-family: 'Sahel', sans-serif;
+  background: #060402;
+  min-height: 100vh;
 }
 
 html {
@@ -27,9 +52,9 @@ html {
   background: #0f0703;
 }
 ::-webkit-scrollbar-thumb {
-  background: #92400e;
+  background: rgba(255,255,255,0.15);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #d97706;
+  background: rgba(255,255,255,0.3);
 }

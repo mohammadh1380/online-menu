@@ -74,3 +74,13 @@ class MenuItem(Base):
     branches: Mapped[list["Branch"]] = relationship(
         "Branch", secondary=menu_item_branches, back_populates="items"
     )
+
+
+# ── Settings (singleton row, id=1) ───────────────────────────────────────────
+
+class Settings(Base):
+    __tablename__ = "settings"
+
+    id:         Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
+    cafe_name:  Mapped[str] = mapped_column(String(200), nullable=False, default="کافه ما")
+    instagram:  Mapped[str] = mapped_column(String(200), nullable=False, default="")

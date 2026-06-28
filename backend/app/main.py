@@ -7,8 +7,8 @@ from sqlalchemy import select
 
 from app.config import settings
 from app.database import AsyncSessionLocal, Base, engine
-from app.models import Branch
-from app.routers import auth, branches, categories, menu
+from app.models import Branch, Settings
+from app.routers import auth, branches, categories, menu, settings as settings_router
 
 _DEFAULT_BRANCHES = [
     {"name": "شعبه نصر",     "slug": "nasr"},
@@ -25,12 +25,21 @@ async def _seed_branches() -> None:
         await db.commit()
 
 
+async def _seed_settings() -> None:
+    async with AsyncSessionLocal() as db:
+        exists = await db.execute(select(Settings).where(Settings.id == 1))
+        if not exists.scalar_one_or_none():
+            db.add(Settings(id=1, cafe_name="کافه ما", instagram=""))
+            await db.commit()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     await _seed_branches()
+    await _seed_settings()
     yield
     await engine.dispose()
 
@@ -54,6 +63,7 @@ app.include_router(auth.router)
 app.include_router(branches.router)
 app.include_router(categories.router)
 app.include_router(menu.router)
+app.include_router(settings_router.router)
 
 app.mount("/media", StaticFiles(directory=str(settings.UPLOAD_DIR)), name="media")
 

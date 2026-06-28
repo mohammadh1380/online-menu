@@ -60,6 +60,20 @@ class MenuItemOut(MenuItemBase):
     model_config = {"from_attributes": True}
 
 
+# ── Settings ──────────────────────────────────────────────────────────────────
+
+class SettingsOut(BaseModel):
+    cafe_name: str
+    instagram: str
+
+    model_config = {"from_attributes": True}
+
+
+class SettingsUpdate(BaseModel):
+    cafe_name: Optional[str] = None
+    instagram: Optional[str] = None
+
+
 # ── Auth ──────────────────────────────────────────────────────────────────────
 
 class LoginRequest(BaseModel):

@@ -4,18 +4,40 @@ import { useEffect, useRef, useState, FormEvent, ChangeEvent } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
-  Branch, Category, MenuItem,
-  getBranches, getCategories,
+  Branch, Category, MenuItem, CafeSettings,
+  getBranches, getCategories, getSettings,
   adminGetMenu, adminCreateItem, adminUpdateItem, adminDeleteItem,
   adminCreateCategory, adminDeleteCategory,
+  adminUpdateSettings,
   photoUrl,
 } from '@/lib/api';
+import ParticleCanvas from '@/components/ParticleCanvas';
 
-type Tab = 'items' | 'categories';
+type Tab = 'items' | 'categories' | 'settings';
 
 function formatPrice(p: number) {
   return new Intl.NumberFormat('fa-IR').format(p) + ' تومان';
 }
+
+// ── shared input style ────────────────────────────────────────────────────────
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  background: '#1a1a1a',
+  border: '1px solid rgba(255,255,255,0.1)',
+  borderRadius: 12,
+  padding: '10px 16px',
+  color: '#ffffff',
+  fontSize: '0.875rem',
+  outline: 'none',
+};
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontSize: '0.75rem',
+  color: 'rgba(255,255,255,0.45)',
+  marginBottom: 6,
+};
 
 // ── Item Form Modal ───────────────────────────────────────────────────────────
 
@@ -93,32 +115,58 @@ function ItemFormModal({ branches, categories, editing, onClose, onSaved }: Item
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
+    >
+      <div
+        className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl"
+        style={{ background: '#111111', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 24px 80px rgba(0,0,0,0.6)' }}
+      >
+        {/* Modal header */}
+        <div
+          className="flex items-center justify-between px-6 py-5"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <h2 className="font-bold text-base" style={{ color: '#ffffff' }}>
             {editing ? 'ویرایش آیتم' : 'افزودن آیتم جدید'}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
+          <button
+            onClick={onClose}
+            style={{ color: 'rgba(255,255,255,0.35)', fontSize: 22, lineHeight: 1, background: 'none', border: 'none', cursor: 'pointer' }}
+          >
+            ×
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Photo */}
+        <form onSubmit={handleSubmit} className="p-6" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+          {/* Photo upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">تصویر</label>
+            <label style={labelStyle}>تصویر</label>
             <div
-              className="border-2 border-dashed border-amber-300 rounded-xl p-4 text-center cursor-pointer hover:bg-amber-50 transition-colors"
               onClick={() => fileRef.current?.click()}
+              style={{
+                border: '1px dashed rgba(255,255,255,0.15)',
+                borderRadius: 12,
+                padding: 16,
+                textAlign: 'center',
+                cursor: 'pointer',
+                background: 'rgba(255,255,255,0.02)',
+                transition: 'border-color .2s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.35)')}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)')}
             >
               {preview ? (
-                <div className="relative h-40 rounded-lg overflow-hidden">
+                <div className="relative rounded-lg overflow-hidden" style={{ height: 160 }}>
                   <Image src={preview} alt="preview" fill className="object-cover" unoptimized />
                 </div>
               ) : (
-                <div className="py-6 text-amber-600">
-                  <span className="text-3xl block mb-2">📷</span>
-                  <span className="text-sm">برای آپلود کلیک کنید</span>
-                  <p className="text-xs text-gray-400 mt-1">JPG، PNG، WebP — حداکثر ۵ مگابایت</p>
+                <div style={{ padding: '24px 0', color: 'rgba(255,255,255,0.3)' }}>
+                  <span style={{ fontSize: 32, display: 'block', marginBottom: 8 }}>📷</span>
+                  <span style={{ fontSize: '0.875rem' }}>برای آپلود کلیک کنید</span>
+                  <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.2)', marginTop: 4 }}>JPG، PNG، WebP — حداکثر ۵ مگابایت</p>
                 </div>
               )}
             </div>
@@ -127,71 +175,120 @@ function ItemFormModal({ branches, categories, editing, onClose, onSaved }: Item
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">نام آیتم *</label>
-            <input required value={name} onChange={(e) => setName(e.target.value)}
-              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-              placeholder="مثلاً: اسپرسو دوبل" />
+            <label style={labelStyle}>نام آیتم *</label>
+            <input
+              required value={name} onChange={(e) => setName(e.target.value)}
+              style={inputStyle} placeholder="مثلاً: اسپرسو دوبل"
+              onFocus={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)')}
+              onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+            />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">توضیحات</label>
-            <textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)}
-              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
-              placeholder="توضیح کوتاهی درباره آیتم…" />
+            <label style={labelStyle}>توضیحات</label>
+            <textarea
+              rows={3} value={description} onChange={(e) => setDescription(e.target.value)}
+              style={{ ...inputStyle, resize: 'none' }} placeholder="توضیح کوتاهی درباره آیتم…"
+              onFocus={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)')}
+              onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+            />
           </div>
 
           {/* Price & Category */}
-          <div className="grid grid-cols-2 gap-4">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">قیمت (تومان) *</label>
-              <input required type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                placeholder="۵۰۰۰۰" />
+              <label style={labelStyle}>قیمت (تومان) *</label>
+              <input
+                required type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)}
+                style={inputStyle} placeholder="۵۰۰۰۰"
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">دسته‌بندی *</label>
-              <select required value={categoryId} onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white">
-                <option value="">انتخاب کنید</option>
-                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              <label style={labelStyle}>دسته‌بندی *</label>
+              <select
+                required value={categoryId} onChange={(e) => setCategoryId(e.target.value)}
+                style={{ ...inputStyle, appearance: 'none' }}
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+              >
+                <option value="" style={{ background: '#1a1a1a' }}>انتخاب کنید</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id} style={{ background: '#1a1a1a' }}>{c.name}</option>
+                ))}
               </select>
             </div>
           </div>
 
           {/* Branches */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">شعبه‌ها * (می‌توان چند شعبه انتخاب کرد)</label>
-            <div className="flex flex-wrap gap-3">
-              {branches.map((b) => (
-                <label key={b.id} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selectedBranches.includes(b.id)}
-                    onChange={() => toggleBranch(b.id)}
-                    className="w-4 h-4 accent-amber-600"
-                  />
-                  <span className="text-sm text-gray-700">{b.name}</span>
-                </label>
-              ))}
+            <label style={labelStyle}>شعبه‌ها * (می‌توان چند شعبه انتخاب کرد)</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+              {branches.map((b) => {
+                const active = selectedBranches.includes(b.id);
+                return (
+                  <button
+                    key={b.id}
+                    type="button"
+                    onClick={() => toggleBranch(b.id)}
+                    style={{
+                      padding: '6px 16px',
+                      borderRadius: 20,
+                      fontSize: '0.8rem',
+                      border: active ? '1px solid #ffffff' : '1px solid rgba(255,255,255,0.15)',
+                      background: active ? '#ffffff' : 'transparent',
+                      color: active ? '#111111' : 'rgba(255,255,255,0.5)',
+                      cursor: 'pointer',
+                      transition: 'all .2s',
+                    }}
+                  >
+                    {b.name}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Availability */}
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input type="checkbox" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="w-4 h-4 accent-amber-600" />
-            <span className="text-sm text-gray-700">موجود در منو</span>
+          {/* Availability toggle */}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+            <input
+              type="checkbox" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)}
+              style={{ width: 16, height: 16, accentColor: '#ffffff' }}
+            />
+            <span style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)' }}>موجود در منو</span>
           </label>
 
-          {error && <p className="text-red-600 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+          {error && (
+            <p style={{ color: '#f87171', fontSize: '0.8rem', background: 'rgba(239,68,68,0.1)', borderRadius: 8, padding: '8px 12px', border: '1px solid rgba(239,68,68,0.2)' }}>
+              {error}
+            </p>
+          )}
 
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose}
-              className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors">
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: 12, paddingTop: 4 }}>
+            <button
+              type="button" onClick={onClose}
+              style={{
+                flex: 1, padding: '11px 0', borderRadius: 12, fontSize: '0.875rem',
+                background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
+                color: 'rgba(255,255,255,0.6)', cursor: 'pointer', transition: 'all .2s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)')}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)')}
+            >
               انصراف
             </button>
-            <button type="submit" disabled={loading}
-              className="flex-1 bg-amber-700 hover:bg-amber-800 disabled:opacity-60 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors">
+            <button
+              type="submit" disabled={loading}
+              style={{
+                flex: 1, padding: '11px 0', borderRadius: 12, fontSize: '0.875rem', fontWeight: 600,
+                background: loading ? 'rgba(255,255,255,0.3)' : '#ffffff',
+                color: '#111111', border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'opacity .2s',
+              }}
+            >
               {loading ? 'در حال ذخیره…' : editing ? 'ذخیره تغییرات' : 'افزودن'}
             </button>
           </div>
@@ -227,56 +324,161 @@ function CategoryForm({ onCreated }: { onCreated: () => void }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 shadow-sm border border-amber-100 mb-6">
-      <h3 className="font-bold text-gray-900 mb-4">افزودن دسته‌بندی جدید</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <form
+      onSubmit={handleSubmit}
+      style={{ background: 'rgba(17,17,17,0.8)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 24, marginBottom: 20 }}
+    >
+      <h3 style={{ color: '#ffffff', fontWeight: 700, marginBottom: 16, fontSize: '0.95rem' }}>افزودن دسته‌بندی جدید</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px', gap: 12 }}>
         <div>
-          <label className="block text-xs text-gray-600 mb-1">نام *</label>
+          <label style={labelStyle}>نام *</label>
           <input required value={name} onChange={(e) => setName(e.target.value)}
-            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-            placeholder="مثلاً: قهوه گرم" />
+            style={inputStyle} placeholder="مثلاً: قهوه گرم"
+            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)')}
+            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+          />
         </div>
         <div>
-          <label className="block text-xs text-gray-600 mb-1">شناسه (slug) *</label>
+          <label style={labelStyle}>شناسه (slug) *</label>
           <input required value={slug} onChange={(e) => setSlug(e.target.value)}
-            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-            placeholder="hot-coffee" dir="ltr" />
+            style={{ ...inputStyle }} placeholder="hot-coffee" dir="ltr"
+            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)')}
+            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+          />
         </div>
         <div>
-          <label className="block text-xs text-gray-600 mb-1">ترتیب</label>
+          <label style={labelStyle}>ترتیب</label>
           <input type="number" value={order} onChange={(e) => setOrder(e.target.value)}
-            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+            style={inputStyle}
+            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)')}
+            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+          />
         </div>
       </div>
-      {error && <p className="text-red-600 text-xs mt-2">{error}</p>}
-      <button type="submit" disabled={loading}
-        className="mt-4 bg-amber-700 hover:bg-amber-800 disabled:opacity-60 text-white px-6 py-2 rounded-xl text-sm font-medium transition-colors">
+      {error && <p style={{ color: '#f87171', fontSize: '0.75rem', marginTop: 8 }}>{error}</p>}
+      <button
+        type="submit" disabled={loading}
+        style={{
+          marginTop: 16, padding: '9px 24px', borderRadius: 10, fontSize: '0.85rem', fontWeight: 600,
+          background: '#ffffff', color: '#111111', border: 'none',
+          cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.5 : 1,
+        }}
+      >
         {loading ? 'در حال افزودن…' : '+ افزودن دسته‌بندی'}
       </button>
     </form>
   );
 }
 
+// ── Settings Form ─────────────────────────────────────────────────────────────
+
+function SettingsForm({ initial, onSaved }: { initial: CafeSettings; onSaved: (s: CafeSettings) => void }) {
+  const [cafeName, setCafeName]   = useState(initial.cafe_name);
+  const [instagram, setInstagram] = useState(initial.instagram);
+  const [loading, setLoading]     = useState(false);
+  const [success, setSuccess]     = useState(false);
+  const [error, setError]         = useState('');
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(''); setSuccess(false);
+    setLoading(true);
+    try {
+      const res = await adminUpdateSettings({ cafe_name: cafeName, instagram });
+      onSaved(res.data);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch {
+      setError('خطا در ذخیره تنظیمات');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={{ maxWidth: 560 }}>
+      <form
+        onSubmit={handleSubmit}
+        style={{ background: 'rgba(17,17,17,0.8)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 32, display: 'flex', flexDirection: 'column', gap: 20 }}
+      >
+        <div>
+          <label style={labelStyle}>نام کافه</label>
+          <input
+            required value={cafeName} onChange={e => setCafeName(e.target.value)}
+            style={inputStyle} placeholder="مثلاً: کافه آرامش"
+            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)')}
+            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+          />
+          <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.25)', marginTop: 6 }}>
+            این نام در صفحه منو و انتخاب شعبه نمایش داده می‌شود
+          </p>
+        </div>
+
+        <div>
+          <label style={labelStyle}>صفحه اینستاگرام</label>
+          <div style={{ position: 'relative' }}>
+            <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)', fontSize: '0.875rem', pointerEvents: 'none' }}>@</span>
+            <input
+              value={instagram} onChange={e => setInstagram(e.target.value.replace('@', ''))}
+              style={{ ...inputStyle, paddingRight: 32 }} placeholder="cafe.username" dir="ltr"
+              onFocus={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)')}
+              onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+            />
+          </div>
+          <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.25)', marginTop: 6 }}>
+            اگر خالی باشد لینک اینستاگرام نمایش داده نمی‌شود
+          </p>
+        </div>
+
+        {error && (
+          <p style={{ color: '#f87171', fontSize: '0.8rem', background: 'rgba(239,68,68,0.1)', borderRadius: 8, padding: '8px 12px', border: '1px solid rgba(239,68,68,0.2)' }}>
+            {error}
+          </p>
+        )}
+        {success && (
+          <p style={{ color: '#4ade80', fontSize: '0.8rem', background: 'rgba(74,222,128,0.08)', borderRadius: 8, padding: '8px 12px', border: '1px solid rgba(74,222,128,0.2)' }}>
+            ✓ تنظیمات با موفقیت ذخیره شد
+          </p>
+        )}
+
+        <button
+          type="submit" disabled={loading}
+          style={{
+            padding: '11px 0', borderRadius: 12, fontWeight: 600, fontSize: '0.9rem',
+            background: loading ? 'rgba(255,255,255,0.3)' : '#ffffff',
+            color: '#111111', border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {loading ? 'در حال ذخیره…' : 'ذخیره تنظیمات'}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+
 // ── Main Admin Page ───────────────────────────────────────────────────────────
 
 export default function AdminPage() {
   const router = useRouter();
-  const [tab, setTab]             = useState<Tab>('items');
-  const [branches, setBranches]   = useState<Branch[]>([]);
+  const [tab, setTab]               = useState<Tab>('items');
+  const [branches, setBranches]     = useState<Branch[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [items, setItems]         = useState<MenuItem[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [showForm, setShowForm]   = useState(false);
-  const [editing, setEditing]     = useState<MenuItem | null>(null);
-  const [search, setSearch]       = useState('');
+  const [items, setItems]           = useState<MenuItem[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [showForm, setShowForm]     = useState(false);
+  const [editing, setEditing]       = useState<MenuItem | null>(null);
+  const [search, setSearch]         = useState('');
+  const [cafeSettings, setCafeSettings] = useState<CafeSettings>({ cafe_name: 'کافه ما', instagram: '' });
 
   async function fetchData() {
     setLoading(true);
     try {
-      const [br, cats, its] = await Promise.all([getBranches(), getCategories(), adminGetMenu()]);
+      const [br, cats, its, sett] = await Promise.all([getBranches(), getCategories(), adminGetMenu(), getSettings()]);
       setBranches(br.data);
       setCategories(cats.data);
       setItems(its.data);
+      setCafeSettings(sett.data);
     } finally {
       setLoading(false);
     }
@@ -305,29 +507,88 @@ export default function AdminPage() {
     ? items.filter((i) => i.name.includes(search) || i.category?.name.includes(search))
     : items;
 
+  const thStyle: React.CSSProperties = {
+    padding: '12px 16px',
+    fontWeight: 600,
+    fontSize: '0.75rem',
+    color: 'rgba(255,255,255,0.4)',
+    textAlign: 'right',
+    letterSpacing: '0.03em',
+  };
+
+  const tdStyle: React.CSSProperties = {
+    padding: '14px 16px',
+    fontSize: '0.875rem',
+    color: 'rgba(255,255,255,0.75)',
+    verticalAlign: 'middle',
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div style={{ minHeight: '100vh', background: '#0d0d0d', color: '#ffffff', position: 'relative' }}>
+      <ParticleCanvas />
+
       {/* Topbar */}
-      <header className="bg-amber-800 text-white px-6 py-4 flex items-center justify-between shadow">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">☕</span>
-          <h1 className="font-bold text-lg">پنل مدیریت کافه</h1>
+      <header style={{
+        background: 'rgba(13,13,13,0.85)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(255,255,255,0.07)',
+        padding: '0 24px',
+        height: 60,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        position: 'relative',
+        zIndex: 10,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 22 }}>☕</span>
+          <h1 style={{ fontWeight: 700, fontSize: '1rem', color: '#ffffff' }}>پنل مدیریت کافه</h1>
         </div>
-        <div className="flex items-center gap-4">
-          <a href="/" target="_blank" className="text-amber-200 hover:text-white text-sm transition-colors">مشاهده منو ↗</a>
-          <button onClick={logout} className="bg-amber-900/50 hover:bg-amber-900 text-white text-sm px-4 py-1.5 rounded-lg transition-colors">خروج</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <a
+            href="/" target="_blank"
+            style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', textDecoration: 'none', transition: 'color .2s' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.4)')}
+          >
+            مشاهده منو ↗
+          </a>
+          <button
+            onClick={logout}
+            style={{
+              padding: '6px 16px', borderRadius: 8, fontSize: '0.85rem',
+              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+              color: 'rgba(255,255,255,0.7)', cursor: 'pointer', transition: 'all .2s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = '#ffffff'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)'; }}
+          >
+            خروج
+          </button>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 16px', position: 'relative', zIndex: 1 }}>
+
         {/* Tabs */}
-        <div className="flex gap-2 mb-6">
-          {(['items', 'categories'] as Tab[]).map((t) => (
-            <button key={t} onClick={() => setTab(t)}
-              className={`px-6 py-2 rounded-xl text-sm font-medium transition-colors ${
-                tab === t ? 'bg-amber-700 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-amber-50'
-              }`}>
-              {t === 'items' ? 'آیتم‌های منو' : 'دسته‌بندی‌ها'}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+          {([
+            { key: 'items',      label: 'آیتم‌های منو' },
+            { key: 'categories', label: 'دسته‌بندی‌ها' },
+            { key: 'settings',   label: 'تنظیمات' },
+          ] as { key: Tab; label: string }[]).map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              style={{
+                padding: '8px 22px', borderRadius: 10, fontSize: '0.875rem', fontWeight: 500,
+                cursor: 'pointer', transition: 'all .2s',
+                background: tab === key ? '#ffffff' : 'transparent',
+                color: tab === key ? '#111111' : 'rgba(255,255,255,0.45)',
+                border: tab === key ? 'none' : '1px solid rgba(255,255,255,0.1)',
+              }}
+            >
+              {label}
             </button>
           ))}
         </div>
@@ -335,84 +596,155 @@ export default function AdminPage() {
         {/* ── Items tab ── */}
         {tab === 'items' && (
           <>
-            <div className="flex flex-col sm:flex-row gap-3 mb-6">
-              <input type="text" placeholder="جستجو…" value={search} onChange={(e) => setSearch(e.target.value)}
-                className="border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1 max-w-xs bg-white" />
-              <button onClick={() => { setEditing(null); setShowForm(true); }}
-                className="bg-amber-700 hover:bg-amber-800 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap">
+            <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+              <input
+                type="text" placeholder="جستجو…" value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{ ...inputStyle, width: 'auto', flex: '1', maxWidth: 280 }}
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+              />
+              <button
+                onClick={() => { setEditing(null); setShowForm(true); }}
+                style={{
+                  padding: '10px 24px', borderRadius: 12, fontSize: '0.875rem', fontWeight: 600,
+                  background: '#ffffff', color: '#111111', border: 'none', cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 + آیتم جدید
               </button>
             </div>
 
             {loading ? (
-              <div className="flex justify-center py-20">
-                <div className="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  border: '2px solid rgba(255,255,255,0.1)',
+                  borderTopColor: 'rgba(255,255,255,0.7)',
+                  animation: 'spin 0.8s linear infinite',
+                }} />
               </div>
             ) : (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-amber-50 text-amber-900 text-right">
-                    <tr>
-                      <th className="px-4 py-3 font-semibold">تصویر</th>
-                      <th className="px-4 py-3 font-semibold">نام</th>
-                      <th className="px-4 py-3 font-semibold hidden md:table-cell">دسته‌بندی</th>
-                      <th className="px-4 py-3 font-semibold hidden lg:table-cell">شعبه‌ها</th>
-                      <th className="px-4 py-3 font-semibold hidden sm:table-cell">قیمت</th>
-                      <th className="px-4 py-3 font-semibold">وضعیت</th>
-                      <th className="px-4 py-3 font-semibold">عملیات</th>
+              <div style={{ background: 'rgba(17,17,17,0.8)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                      <th style={thStyle}>تصویر</th>
+                      <th style={thStyle}>نام</th>
+                      <th style={thStyle}>دسته‌بندی</th>
+                      <th style={thStyle}>شعبه‌ها</th>
+                      <th style={thStyle}>قیمت</th>
+                      <th style={thStyle}>وضعیت</th>
+                      <th style={thStyle}>عملیات</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody>
                     {filteredItems.length === 0 ? (
-                      <tr><td colSpan={7} className="text-center py-12 text-gray-400">آیتمی یافت نشد</td></tr>
+                      <tr>
+                        <td colSpan={7} style={{ textAlign: 'center', padding: '48px 0', color: 'rgba(255,255,255,0.2)', fontSize: '0.875rem' }}>
+                          آیتمی یافت نشد
+                        </td>
+                      </tr>
                     ) : (
-                      filteredItems.map((item) => (
-                        <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="px-4 py-3">
-                            <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-amber-100 flex-shrink-0">
+                      filteredItems.map((item, idx) => (
+                        <tr
+                          key={item.id}
+                          style={{
+                            borderBottom: idx < filteredItems.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                            transition: 'background .15s',
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                        >
+                          {/* Photo */}
+                          <td style={tdStyle}>
+                            <div style={{ width: 44, height: 44, borderRadius: 10, overflow: 'hidden', background: '#1e1e1e', position: 'relative', flexShrink: 0 }}>
                               {item.photo ? (
                                 <Image src={photoUrl(item.photo)!} alt={item.name} fill className="object-cover" unoptimized />
                               ) : (
-                                <div className="flex items-center justify-center h-full text-xl">☕</div>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 18 }}>☕</div>
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-3">
-                            <p className="font-medium text-gray-900">{item.name}</p>
+
+                          {/* Name */}
+                          <td style={tdStyle}>
+                            <p style={{ fontWeight: 600, color: '#ffffff', marginBottom: 2 }}>{item.name}</p>
                             {item.description && (
-                              <p className="text-gray-400 text-xs truncate max-w-[160px]">{item.description}</p>
+                              <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>
+                                {item.description}
+                              </p>
                             )}
                           </td>
-                          <td className="px-4 py-3 hidden md:table-cell text-gray-600">{item.category?.name ?? '—'}</td>
-                          <td className="px-4 py-3 hidden lg:table-cell">
-                            <div className="flex flex-wrap gap-1">
+
+                          {/* Category */}
+                          <td style={{ ...tdStyle, color: 'rgba(255,255,255,0.5)' }}>
+                            {item.category?.name
+                              ? <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }}>{item.category.name}</span>
+                              : <span style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>
+                            }
+                          </td>
+
+                          {/* Branches */}
+                          <td style={tdStyle}>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                               {item.branches.length === 0 ? (
-                                <span className="text-gray-400 text-xs">—</span>
+                                <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.75rem' }}>—</span>
                               ) : (
                                 item.branches.map((b) => (
-                                  <span key={b.id} className="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full">
+                                  <span key={b.id} style={{
+                                    fontSize: '0.7rem', padding: '2px 10px', borderRadius: 20,
+                                    background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                  }}>
                                     {b.name}
                                   </span>
                                 ))
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-3 hidden sm:table-cell text-amber-700 font-medium">{formatPrice(item.price)}</td>
-                          <td className="px-4 py-3">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              item.is_available ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'
-                            }`}>
+
+                          {/* Price */}
+                          <td style={{ ...tdStyle, color: '#ffffff', fontWeight: 500, whiteSpace: 'nowrap' }}>{formatPrice(item.price)}</td>
+
+                          {/* Status */}
+                          <td style={tdStyle}>
+                            <span style={{
+                              padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 500,
+                              background: item.is_available ? 'rgba(74,222,128,0.12)' : 'rgba(255,255,255,0.06)',
+                              color: item.is_available ? '#4ade80' : 'rgba(255,255,255,0.3)',
+                              border: `1px solid ${item.is_available ? 'rgba(74,222,128,0.25)' : 'rgba(255,255,255,0.1)'}`,
+                            }}>
                               {item.is_available ? 'موجود' : 'ناموجود'}
                             </span>
                           </td>
-                          <td className="px-4 py-3">
-                            <div className="flex gap-2">
-                              <button onClick={() => { setEditing(item); setShowForm(true); }}
-                                className="text-amber-700 hover:text-amber-900 text-xs px-3 py-1.5 border border-amber-300 rounded-lg hover:bg-amber-50 transition-colors">
+
+                          {/* Actions */}
+                          <td style={tdStyle}>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                              <button
+                                onClick={() => { setEditing(item); setShowForm(true); }}
+                                style={{
+                                  fontSize: '0.75rem', padding: '5px 12px', borderRadius: 8,
+                                  background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
+                                  color: 'rgba(255,255,255,0.6)', cursor: 'pointer', transition: 'all .2s',
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; e.currentTarget.style.color = '#ffffff'; }}
+                                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
+                              >
                                 ویرایش
                               </button>
-                              <button onClick={() => handleDelete(item)}
-                                className="text-red-600 hover:text-red-800 text-xs px-3 py-1.5 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
+                              <button
+                                onClick={() => handleDelete(item)}
+                                style={{
+                                  fontSize: '0.75rem', padding: '5px 12px', borderRadius: 8,
+                                  background: 'transparent', border: '1px solid rgba(239,68,68,0.25)',
+                                  color: 'rgba(239,68,68,0.7)', cursor: 'pointer', transition: 'all .2s',
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(239,68,68,0.6)'; e.currentTarget.style.color = '#f87171'; }}
+                                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(239,68,68,0.25)'; e.currentTarget.style.color = 'rgba(239,68,68,0.7)'; }}
+                              >
                                 حذف
                               </button>
                             </div>
@@ -431,28 +763,45 @@ export default function AdminPage() {
         {tab === 'categories' && (
           <>
             <CategoryForm onCreated={fetchData} />
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-amber-50 text-amber-900 text-right">
-                  <tr>
-                    <th className="px-4 py-3 font-semibold">نام</th>
-                    <th className="px-4 py-3 font-semibold hidden sm:table-cell">شناسه</th>
-                    <th className="px-4 py-3 font-semibold hidden sm:table-cell">ترتیب</th>
-                    <th className="px-4 py-3 font-semibold">عملیات</th>
+            <div style={{ background: 'rgba(17,17,17,0.8)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                    <th style={thStyle}>نام</th>
+                    <th style={thStyle}>شناسه</th>
+                    <th style={thStyle}>ترتیب</th>
+                    <th style={thStyle}>عملیات</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody>
                   {categories.length === 0 ? (
-                    <tr><td colSpan={4} className="text-center py-12 text-gray-400">دسته‌بندی‌ای وجود ندارد</td></tr>
+                    <tr>
+                      <td colSpan={4} style={{ textAlign: 'center', padding: '48px 0', color: 'rgba(255,255,255,0.2)', fontSize: '0.875rem' }}>
+                        دسته‌بندی‌ای وجود ندارد
+                      </td>
+                    </tr>
                   ) : (
-                    categories.map((cat) => (
-                      <tr key={cat.id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="px-4 py-3 font-medium text-gray-900">{cat.name}</td>
-                        <td className="px-4 py-3 hidden sm:table-cell text-gray-500" dir="ltr">{cat.slug}</td>
-                        <td className="px-4 py-3 hidden sm:table-cell text-gray-500">{cat.order}</td>
-                        <td className="px-4 py-3">
-                          <button onClick={() => handleDeleteCategory(cat)}
-                            className="text-red-600 hover:text-red-800 text-xs px-3 py-1.5 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
+                    categories.map((cat, idx) => (
+                      <tr
+                        key={cat.id}
+                        style={{ borderBottom: idx < categories.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', transition: 'background .15s' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                      >
+                        <td style={{ ...tdStyle, fontWeight: 600, color: '#ffffff' }}>{cat.name}</td>
+                        <td style={{ ...tdStyle, color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }} dir="ltr">{cat.slug}</td>
+                        <td style={{ ...tdStyle, color: 'rgba(255,255,255,0.35)' }}>{cat.order}</td>
+                        <td style={tdStyle}>
+                          <button
+                            onClick={() => handleDeleteCategory(cat)}
+                            style={{
+                              fontSize: '0.75rem', padding: '5px 12px', borderRadius: 8,
+                              background: 'transparent', border: '1px solid rgba(239,68,68,0.25)',
+                              color: 'rgba(239,68,68,0.7)', cursor: 'pointer', transition: 'all .2s',
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(239,68,68,0.6)'; e.currentTarget.style.color = '#f87171'; }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(239,68,68,0.25)'; e.currentTarget.style.color = 'rgba(239,68,68,0.7)'; }}
+                          >
                             حذف
                           </button>
                         </td>
@@ -466,6 +815,11 @@ export default function AdminPage() {
         )}
       </div>
 
+        {/* ── Settings tab ── */}
+        {tab === 'settings' && (
+          <SettingsForm initial={cafeSettings} onSaved={setCafeSettings} />
+        )}
+
       {showForm && (
         <ItemFormModal
           branches={branches}
@@ -475,6 +829,11 @@ export default function AdminPage() {
           onSaved={fetchData}
         />
       )}
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        select option { background: #1a1a1a; color: #ffffff; }
+      `}</style>
     </div>
   );
 }

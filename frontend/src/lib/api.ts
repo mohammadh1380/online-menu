@@ -18,6 +18,11 @@ export interface Category {
   order: number;
 }
 
+export interface CafeSettings {
+  cafe_name: string;
+  instagram: string;
+}
+
 export interface MenuItem {
   id: number;
   name: string;
@@ -38,6 +43,7 @@ export const api = axios.create({ baseURL: API_URL });
 
 export const getBranches   = () => api.get<Branch[]>('/api/branches');
 export const getCategories = () => api.get<Category[]>('/api/categories');
+export const getSettings   = () => api.get<CafeSettings>('/api/settings');
 
 export const getMenu = (branchId?: number, categoryId?: number) =>
   api.get<MenuItem[]>('/api/menu', {
@@ -94,3 +100,7 @@ export const adminCreateCategory = (data: { name: string; slug: string; order: n
   adminApi.post<Category>('/api/admin/categories', data);
 export const adminDeleteCategory = (id: number) =>
   adminApi.delete(`/api/admin/categories/${id}`);
+
+// Settings
+export const adminUpdateSettings = (data: Partial<CafeSettings>) =>
+  adminApi.put<CafeSettings>('/api/admin/settings', data);
