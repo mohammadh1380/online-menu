@@ -4,11 +4,8 @@
 
 @font-face {
   font-family: 'Sahel';
-  src: url('https://cdn.fontcdn.ir/Font/Persian/Sahel/Sahel.eot');
-  src: url('https://cdn.fontcdn.ir/Font/Persian/Sahel/Sahel.eot?#iefix') format('embedded-opentype'),
-       url('https://cdn.fontcdn.ir/Font/Persian/Sahel/Sahel.woff2') format('woff2'),
-       url('https://cdn.fontcdn.ir/Font/Persian/Sahel/Sahel.woff') format('woff'),
-       url('https://cdn.fontcdn.ir/Font/Persian/Sahel/Sahel.ttf') format('truetype');
+  src: url('/fonts/Sahel.woff2') format('woff2'),
+       url('/fonts/Sahel.woff') format('woff');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -16,11 +13,8 @@
 
 @font-face {
   font-family: 'Sahel';
-  src: url('https://cdn.fontcdn.ir/Font/Persian/Sahel/Sahel-Bold.eot');
-  src: url('https://cdn.fontcdn.ir/Font/Persian/Sahel/Sahel-Bold.eot?#iefix') format('embedded-opentype'),
-       url('https://cdn.fontcdn.ir/Font/Persian/Sahel/Sahel-Bold.woff2') format('woff2'),
-       url('https://cdn.fontcdn.ir/Font/Persian/Sahel/Sahel-Bold.woff') format('woff'),
-       url('https://cdn.fontcdn.ir/Font/Persian/Sahel/Sahel-Bold.ttf') format('truetype');
+  src: url('/fonts/Sahel-Bold.woff2') format('woff2'),
+       url('/fonts/Sahel-Bold.woff') format('woff');
   font-weight: bold;
   font-style: normal;
   font-display: swap;

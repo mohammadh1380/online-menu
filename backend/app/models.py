@@ -83,4 +83,5 @@ class Settings(Base):
 
     id:         Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
     cafe_name:  Mapped[str] = mapped_column(String(200), nullable=False, default="کافه ما")
+    subtitle:   Mapped[str] = mapped_column(String(300), nullable=False, default="لذت یک فنجان خوب، با هر سفارش")
     instagram:  Mapped[str] = mapped_column(String(200), nullable=False, default="")

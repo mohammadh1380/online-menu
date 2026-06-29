@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import {
   getBranches, getCategories, getMenu, getSettings,
@@ -19,8 +19,8 @@ function BgLayer() {
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }} />
-      {/* dark overlay so text stays legible */}
-      <div style={{ position: 'absolute', inset: 0, background: 'rgba(5,3,2,0.82)' }} />
+      {/* dark overlay — keep some depth but let the photo breathe */}
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(5,3,2,0.55)' }} />
     </div>
   );
 }
@@ -53,19 +53,6 @@ function BranchSelector({ branches, onSelect, settings }: { branches: Branch[]; 
 
         {/* logo + title */}
         <div className="text-center mb-16">
-          <div
-            className="mx-auto mb-6 flex items-center justify-center"
-            style={{
-              width: 96, height: 96,
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              boxShadow: '0 0 60px rgba(255,255,255,0.04)',
-            }}
-          >
-            <span style={{ fontSize: 44 }}>☕</span>
-          </div>
-
           <h1
             className="font-bold"
             style={{ fontSize: 'clamp(2.4rem, 6vw, 3.8rem)', color: '#ffffff', lineHeight: 1.15, letterSpacing: '-0.01em' }}
@@ -84,14 +71,14 @@ function BranchSelector({ branches, onSelect, settings }: { branches: Branch[]; 
             <a
               href={`https://instagram.com/${settings.instagram}`}
               target="_blank" rel="noopener noreferrer"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12, color: 'rgba(255,255,255,0.35)', fontSize: '0.85rem', textDecoration: 'none', transition: 'color .2s' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12, color: 'rgba(255,255,255,0.35)', fontSize: '0.85rem', textDecoration: 'none', transition: 'color .2s', direction: 'ltr' }}
               onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.7)')}
               onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.35)')}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
               </svg>
-              <span dir="ltr">@{settings.instagram}</span>
+              <span>{settings.instagram}</span>
             </a>
           )}
         </div>
@@ -159,64 +146,72 @@ function MenuCard({ item }: { item: MenuItem }) {
   const url = photoUrl(item.photo);
   return (
     <div
-      className="rounded-2xl overflow-hidden flex flex-col group transition-all duration-300 hover:-translate-y-1"
+      className="group transition-all duration-300"
       style={{
-        background: '#161616',
-        border: '1px solid rgba(255,255,255,0.08)',
+        display: 'flex',
+        flexDirection: 'column',
+        borderRadius: 18,
+        overflow: 'hidden',
+        background: 'rgba(18,18,18,0.9)',
+        backdropFilter: 'blur(10px)',
+        border: '1px solid rgba(255,255,255,0.07)',
         boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
       }}
-      onMouseEnter={e => {
-        (e.currentTarget as HTMLDivElement).style.border = '1px solid rgba(255,255,255,0.22)';
-      }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLDivElement).style.border = '1px solid rgba(255,255,255,0.08)';
-      }}
+      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.border = '1px solid rgba(255,255,255,0.18)'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-3px)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.border = '1px solid rgba(255,255,255,0.07)'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; }}
     >
-      {/* Photo */}
-      <div className="relative h-52 overflow-hidden" style={{ background: '#111' }}>
+      {/* Photo — top */}
+      <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3', background: '#111', flexShrink: 0 }}>
         {url ? (
           <Image
             src={url}
             alt={item.name}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105"
-            sizes="(max-width:640px) 100vw,(max-width:1024px) 50vw,33vw"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             unoptimized
           />
         ) : (
-          <div className="flex items-center justify-center h-full">
-            <span className="text-6xl opacity-10">☕</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <span style={{ fontSize: 48, opacity: 0.08 }}>☕</span>
           </div>
         )}
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(13,13,13,0.7) 0%, transparent 55%)' }} />
-
+        {/* Category badge — top corner */}
         {item.category && (
-          <span
-            className="absolute top-3 right-3 text-xs px-3 py-1 rounded-full font-medium"
-            style={{ background: 'rgba(0,0,0,0.7)', color: 'rgba(255,255,255,0.8)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}
-          >
+          <span style={{
+            position: 'absolute', top: 10, right: 10,
+            fontSize: '0.7rem', padding: '3px 10px', borderRadius: 20,
+            background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)',
+            color: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.15)',
+          }}>
             {item.category.name}
           </span>
         )}
       </div>
 
-      {/* Content */}
-      <div className="p-5 flex flex-col flex-1">
-        <h3 className="font-bold text-lg leading-snug mb-1" style={{ color: '#ffffff' }}>{item.name}</h3>
-        {item.description && (
-          <p className="text-sm flex-1 leading-relaxed line-clamp-2" style={{ color: 'rgba(255,255,255,0.4)' }}>
-            {item.description}
-          </p>
-        )}
-        <div className="mt-4 flex items-center justify-between">
-          <span className="font-bold text-base" style={{ color: '#ffffff' }}>
-            {formatPrice(item.price)}
+      {/* Content — bottom */}
+      <div style={{ flex: 1, padding: '14px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 8 }}>
+        <div>
+          <h3 style={{ fontWeight: 700, fontSize: '1rem', color: '#ffffff', lineHeight: 1.4, marginBottom: 4, textAlign: 'right' }}>
+            {item.name}
+          </h3>
+          {item.description && (
+            <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1.6, textAlign: 'right', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2 } as React.CSSProperties}>
+              {item.description}
+            </p>
+          )}
+        </div>
+
+        {/* Bottom: status + price */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+          <span style={{
+            fontSize: '0.7rem', padding: '3px 10px', borderRadius: 20,
+            background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.1)',
+          }}>
+            {item.is_available ? 'موجود' : 'ناموجود'}
           </span>
-          <span
-            className="text-xs px-2 py-1 rounded-full"
-            style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.12)' }}
-          >
-            موجود
+          <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#ffffff' }}>
+            {formatPrice(item.price)}
           </span>
         </div>
       </div>
@@ -234,12 +229,15 @@ export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [search, setSearch]                 = useState('');
   const [loading, setLoading]               = useState(false);
-  const [cafeSettings, setCafeSettings]     = useState<CafeSettings>({ cafe_name: 'کافه ما', instagram: '' });
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [cafeSettings, setCafeSettings]     = useState<CafeSettings>({ cafe_name: 'کافه ما', subtitle: 'لذت یک فنجان خوب، با هر سفارش', instagram: '' });
 
   useEffect(() => {
-    getBranches().then((r) => setBranches(r.data));
-    getCategories().then((r) => setCategories(r.data));
-    getSettings().then((r) => setCafeSettings(r.data));
+    Promise.all([
+      getBranches().then((r) => setBranches(r.data)),
+      getCategories().then((r) => setCategories(r.data)),
+      getSettings().then((r) => setCafeSettings(r.data)),
+    ]).finally(() => setInitialLoading(false));
   }, []);
 
   useEffect(() => {
@@ -256,6 +254,19 @@ export default function MenuPage() {
     setSearch('');
   }
 
+  if (initialLoading) {
+    return (
+      <>
+        <BgLayer />
+        <ParticleCanvas />
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: 'rgba(255,255,255,0.7)', animation: 'spin 0.8s linear infinite' }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      </>
+    );
+  }
+
   if (!activeBranch) {
     return <BranchSelector branches={branches} onSelect={selectBranch} settings={cafeSettings} />;
   }
@@ -270,52 +281,50 @@ export default function MenuPage() {
       <ParticleCanvas />
       <div className="min-h-screen" style={{ position: 'relative', zIndex: 1, color: '#ffffff' }}>
 
-        {/* Header */}
-        <header
-          className="relative text-center py-14 px-4 overflow-hidden"
-          style={{ background: 'rgba(6,4,2,0.6)', backdropFilter: 'blur(8px)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
-        >
-          {/* Subtle top glow */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-24 opacity-10 blur-3xl rounded-full"
-            style={{ background: '#ffffff' }} />
+        {/* Hero header — full bleed, bg.jpg shows through */}
+        <header style={{ position: 'relative', minHeight: 320, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '60px 16px 48px', overflow: 'hidden' }}>
+          {/* bottom gradient fade into the content area */}
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 120, background: 'linear-gradient(to bottom, transparent, rgba(5,3,2,0.9))', pointerEvents: 'none' }} />
 
-          <div className="relative z-10">
-            <div
-              className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4"
-              style={{ border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)' }}
-            >
-              <span className="text-3xl">☕</span>
-            </div>
-            <h1 className="text-4xl font-bold" style={{ color: '#ffffff' }}>{cafeSettings.cafe_name}</h1>
-            <p className="text-sm mt-1 mb-3" style={{ color: 'rgba(255,255,255,0.35)' }}>لذت یک فنجان خوب، با هر سفارش</p>
+          <div style={{ position: 'relative', zIndex: 2 }}>
+            <h1 style={{ fontSize: 'clamp(2rem,6vw,3.2rem)', fontWeight: 700, color: '#ffffff', marginBottom: 8, textShadow: '0 2px 20px rgba(0,0,0,0.5)' }}>
+              {cafeSettings.cafe_name}
+            </h1>
+            {cafeSettings.subtitle && (
+              <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)', marginBottom: cafeSettings.instagram ? 8 : 20 }}>
+                {cafeSettings.subtitle}
+              </p>
+            )}
+
             {cafeSettings.instagram && (
               <a
                 href={`https://instagram.com/${cafeSettings.instagram}`}
                 target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 mb-4"
-                style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.8rem', textDecoration: 'none', transition: 'color .2s' }}
-                onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.7)')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.35)')}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 20, color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem', textDecoration: 'none', transition: 'color .2s', direction: 'ltr' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.8)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.4)')}
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
                 </svg>
-                <span dir="ltr">@{cafeSettings.instagram}</span>
+                <span>{cafeSettings.instagram}</span>
               </a>
             )}
 
             {/* Branch switcher */}
-            <div className="flex justify-center gap-2 flex-wrap">
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
               {branches.map((b) => (
                 <button
                   key={b.id}
                   onClick={() => selectBranch(b)}
-                  className="px-5 py-2 rounded-full text-sm font-medium transition-all duration-200"
-                  style={
-                    activeBranch.id === b.id
-                      ? { background: '#ffffff', color: '#0d0d0d' }
-                      : { background: 'transparent', color: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.18)' }
-                  }
+                  style={{
+                    padding: '8px 22px', borderRadius: 999, fontSize: '0.875rem', fontWeight: 500,
+                    cursor: 'pointer', transition: 'all .2s',
+                    ...(activeBranch.id === b.id
+                      ? { background: '#ffffff', color: '#0d0d0d', border: 'none' }
+                      : { background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.2)' }
+                    )
+                  }}
                 >
                   {b.name}
                 </button>
@@ -324,7 +333,7 @@ export default function MenuPage() {
           </div>
         </header>
 
-        <main className="max-w-6xl mx-auto px-4 py-8" style={{ background: 'transparent' }}>
+        <main className="mx-auto px-4 py-8" style={{ background: 'transparent', maxWidth: 1200 }}>
 
           {/* Search */}
           <div className="mb-6">
@@ -376,16 +385,18 @@ export default function MenuPage() {
               <p>آیتمی یافت نشد</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {filtered.map((item) => <MenuCard key={item.id} item={item} />)}
-            </div>
+            <>
+              <style>{`
+                @media (max-width: 768px) { .menu-grid { grid-template-columns: repeat(2, 1fr) !important; } }
+                @media (max-width: 480px) { .menu-grid { grid-template-columns: 1fr !important; } }
+              `}</style>
+              <div className="menu-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+                {filtered.map((item) => <MenuCard key={item.id} item={item} />)}
+              </div>
+            </>
           )}
         </main>
 
-        {/* Footer */}
-        <footer className="text-center py-8 text-xs" style={{ color: 'rgba(255,255,255,0.2)', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(6,4,2,0.4)' }}>
-          © ۱۴۰۳ {cafeSettings.cafe_name} — با عشق تهیه شده
-        </footer>
       </div>
     </>
   );

@@ -374,6 +374,7 @@ function CategoryForm({ onCreated }: { onCreated: () => void }) {
 
 function SettingsForm({ initial, onSaved }: { initial: CafeSettings; onSaved: (s: CafeSettings) => void }) {
   const [cafeName, setCafeName]   = useState(initial.cafe_name);
+  const [subtitle, setSubtitle]   = useState(initial.subtitle);
   const [instagram, setInstagram] = useState(initial.instagram);
   const [loading, setLoading]     = useState(false);
   const [success, setSuccess]     = useState(false);
@@ -384,7 +385,7 @@ function SettingsForm({ initial, onSaved }: { initial: CafeSettings; onSaved: (s
     setError(''); setSuccess(false);
     setLoading(true);
     try {
-      const res = await adminUpdateSettings({ cafe_name: cafeName, instagram });
+      const res = await adminUpdateSettings({ cafe_name: cafeName, subtitle, instagram });
       onSaved(res.data);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
@@ -411,6 +412,19 @@ function SettingsForm({ initial, onSaved }: { initial: CafeSettings; onSaved: (s
           />
           <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.25)', marginTop: 6 }}>
             این نام در صفحه منو و انتخاب شعبه نمایش داده می‌شود
+          </p>
+        </div>
+
+        <div>
+          <label style={labelStyle}>متن زیرعنوان</label>
+          <input
+            value={subtitle} onChange={e => setSubtitle(e.target.value)}
+            style={inputStyle} placeholder="مثلاً: لذت یک فنجان خوب، با هر سفارش"
+            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)')}
+            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+          />
+          <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.25)', marginTop: 6 }}>
+            متنی که زیر نام کافه در صفحه منو نمایش داده می‌شود
           </p>
         </div>
 
@@ -469,7 +483,7 @@ export default function AdminPage() {
   const [showForm, setShowForm]     = useState(false);
   const [editing, setEditing]       = useState<MenuItem | null>(null);
   const [search, setSearch]         = useState('');
-  const [cafeSettings, setCafeSettings] = useState<CafeSettings>({ cafe_name: 'کافه ما', instagram: '' });
+  const [cafeSettings, setCafeSettings] = useState<CafeSettings>({ cafe_name: 'کافه ما', subtitle: 'لذت یک فنجان خوب، با هر سفارش', instagram: '' });
 
   async function fetchData() {
     setLoading(true);
@@ -625,136 +639,130 @@ export default function AdminPage() {
                   animation: 'spin 0.8s linear infinite',
                 }} />
               </div>
+            ) : filteredItems.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '48px 0', color: 'rgba(255,255,255,0.2)', fontSize: '0.875rem',
+                background: 'rgba(17,17,17,0.8)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.07)' }}>
+                آیتمی یافت نشد
+              </div>
             ) : (
-              <div style={{ background: 'rgba(17,17,17,0.8)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-                      <th style={thStyle}>تصویر</th>
-                      <th style={thStyle}>نام</th>
-                      <th style={thStyle}>دسته‌بندی</th>
-                      <th style={thStyle}>شعبه‌ها</th>
-                      <th style={thStyle}>قیمت</th>
-                      <th style={thStyle}>وضعیت</th>
-                      <th style={thStyle}>عملیات</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredItems.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} style={{ textAlign: 'center', padding: '48px 0', color: 'rgba(255,255,255,0.2)', fontSize: '0.875rem' }}>
-                          آیتمی یافت نشد
-                        </td>
+              <>
+                {/* ── Desktop table (hidden on mobile) ── */}
+                <div className="admin-table-wrap" style={{ background: 'rgba(17,17,17,0.8)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, overflow: 'hidden' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                        <th style={thStyle}>تصویر</th>
+                        <th style={thStyle}>نام</th>
+                        <th style={thStyle}>دسته‌بندی</th>
+                        <th style={thStyle}>شعبه‌ها</th>
+                        <th style={thStyle}>قیمت</th>
+                        <th style={thStyle}>وضعیت</th>
+                        <th style={thStyle}>عملیات</th>
                       </tr>
-                    ) : (
-                      filteredItems.map((item, idx) => (
+                    </thead>
+                    <tbody>
+                      {filteredItems.map((item, idx) => (
                         <tr
                           key={item.id}
-                          style={{
-                            borderBottom: idx < filteredItems.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                            transition: 'background .15s',
-                          }}
+                          style={{ borderBottom: idx < filteredItems.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', transition: 'background .15s' }}
                           onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
                           onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                         >
-                          {/* Photo */}
                           <td style={tdStyle}>
-                            <div style={{ width: 44, height: 44, borderRadius: 10, overflow: 'hidden', background: '#1e1e1e', position: 'relative', flexShrink: 0 }}>
-                              {item.photo ? (
-                                <Image src={photoUrl(item.photo)!} alt={item.name} fill className="object-cover" unoptimized />
-                              ) : (
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 18 }}>☕</div>
-                              )}
+                            <div style={{ width: 44, height: 44, borderRadius: 10, overflow: 'hidden', background: '#1e1e1e', position: 'relative' }}>
+                              {item.photo ? <Image src={photoUrl(item.photo)!} alt={item.name} fill className="object-cover" unoptimized /> : <div style={{ display:'flex',alignItems:'center',justifyContent:'center',height:'100%',fontSize:18 }}>☕</div>}
                             </div>
                           </td>
-
-                          {/* Name */}
                           <td style={tdStyle}>
                             <p style={{ fontWeight: 600, color: '#ffffff', marginBottom: 2 }}>{item.name}</p>
-                            {item.description && (
-                              <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>
-                                {item.description}
-                              </p>
-                            )}
+                            {item.description && <p style={{ fontSize:'0.75rem', color:'rgba(255,255,255,0.3)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:160 }}>{item.description}</p>}
                           </td>
-
-                          {/* Category */}
-                          <td style={{ ...tdStyle, color: 'rgba(255,255,255,0.5)' }}>
-                            {item.category?.name
-                              ? <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }}>{item.category.name}</span>
-                              : <span style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>
-                            }
-                          </td>
-
-                          {/* Branches */}
                           <td style={tdStyle}>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                              {item.branches.length === 0 ? (
-                                <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.75rem' }}>—</span>
-                              ) : (
-                                item.branches.map((b) => (
-                                  <span key={b.id} style={{
-                                    fontSize: '0.7rem', padding: '2px 10px', borderRadius: 20,
-                                    background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                  }}>
-                                    {b.name}
-                                  </span>
-                                ))
-                              )}
+                            {item.category?.name
+                              ? <span style={{ padding:'3px 10px', borderRadius:20, fontSize:'0.75rem', background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.6)' }}>{item.category.name}</span>
+                              : <span style={{ color:'rgba(255,255,255,0.2)' }}>—</span>}
+                          </td>
+                          <td style={tdStyle}>
+                            <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
+                              {item.branches.length === 0
+                                ? <span style={{ color:'rgba(255,255,255,0.2)', fontSize:'0.75rem' }}>—</span>
+                                : item.branches.map(b => <span key={b.id} style={{ fontSize:'0.7rem', padding:'2px 10px', borderRadius:20, background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.6)', border:'1px solid rgba(255,255,255,0.1)' }}>{b.name}</span>)}
                             </div>
                           </td>
-
-                          {/* Price */}
-                          <td style={{ ...tdStyle, color: '#ffffff', fontWeight: 500, whiteSpace: 'nowrap' }}>{formatPrice(item.price)}</td>
-
-                          {/* Status */}
+                          <td style={{ ...tdStyle, color:'#ffffff', fontWeight:500, whiteSpace:'nowrap' }}>{formatPrice(item.price)}</td>
                           <td style={tdStyle}>
-                            <span style={{
-                              padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 500,
+                            <span style={{ padding:'3px 10px', borderRadius:20, fontSize:'0.75rem', fontWeight:500,
                               background: item.is_available ? 'rgba(74,222,128,0.12)' : 'rgba(255,255,255,0.06)',
                               color: item.is_available ? '#4ade80' : 'rgba(255,255,255,0.3)',
-                              border: `1px solid ${item.is_available ? 'rgba(74,222,128,0.25)' : 'rgba(255,255,255,0.1)'}`,
-                            }}>
+                              border:`1px solid ${item.is_available ? 'rgba(74,222,128,0.25)' : 'rgba(255,255,255,0.1)'}` }}>
                               {item.is_available ? 'موجود' : 'ناموجود'}
                             </span>
                           </td>
-
-                          {/* Actions */}
                           <td style={tdStyle}>
-                            <div style={{ display: 'flex', gap: 8 }}>
-                              <button
-                                onClick={() => { setEditing(item); setShowForm(true); }}
-                                style={{
-                                  fontSize: '0.75rem', padding: '5px 12px', borderRadius: 8,
-                                  background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
-                                  color: 'rgba(255,255,255,0.6)', cursor: 'pointer', transition: 'all .2s',
-                                }}
-                                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; e.currentTarget.style.color = '#ffffff'; }}
-                                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
-                              >
+                            <div style={{ display:'flex', gap:8 }}>
+                              <button onClick={() => { setEditing(item); setShowForm(true); }}
+                                style={{ fontSize:'0.75rem', padding:'5px 12px', borderRadius:8, background:'transparent', border:'1px solid rgba(255,255,255,0.15)', color:'rgba(255,255,255,0.6)', cursor:'pointer', transition:'all .2s' }}
+                                onMouseEnter={e => { e.currentTarget.style.borderColor='rgba(255,255,255,0.4)'; e.currentTarget.style.color='#ffffff'; }}
+                                onMouseLeave={e => { e.currentTarget.style.borderColor='rgba(255,255,255,0.15)'; e.currentTarget.style.color='rgba(255,255,255,0.6)'; }}>
                                 ویرایش
                               </button>
-                              <button
-                                onClick={() => handleDelete(item)}
-                                style={{
-                                  fontSize: '0.75rem', padding: '5px 12px', borderRadius: 8,
-                                  background: 'transparent', border: '1px solid rgba(239,68,68,0.25)',
-                                  color: 'rgba(239,68,68,0.7)', cursor: 'pointer', transition: 'all .2s',
-                                }}
-                                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(239,68,68,0.6)'; e.currentTarget.style.color = '#f87171'; }}
-                                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(239,68,68,0.25)'; e.currentTarget.style.color = 'rgba(239,68,68,0.7)'; }}
-                              >
+                              <button onClick={() => handleDelete(item)}
+                                style={{ fontSize:'0.75rem', padding:'5px 12px', borderRadius:8, background:'transparent', border:'1px solid rgba(239,68,68,0.25)', color:'rgba(239,68,68,0.7)', cursor:'pointer', transition:'all .2s' }}
+                                onMouseEnter={e => { e.currentTarget.style.borderColor='rgba(239,68,68,0.6)'; e.currentTarget.style.color='#f87171'; }}
+                                onMouseLeave={e => { e.currentTarget.style.borderColor='rgba(239,68,68,0.25)'; e.currentTarget.style.color='rgba(239,68,68,0.7)'; }}>
                                 حذف
                               </button>
                             </div>
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* ── Mobile cards (hidden on desktop) ── */}
+                <div className="admin-cards-wrap" style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                  {filteredItems.map(item => (
+                    <div key={item.id} style={{ background:'rgba(17,17,17,0.85)', backdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:14 }}>
+                      {/* top row: photo + info */}
+                      <div style={{ display:'flex', gap:12, alignItems:'flex-start', marginBottom:12 }}>
+                        <div style={{ width:52, height:52, borderRadius:10, overflow:'hidden', background:'#1e1e1e', position:'relative', flexShrink:0 }}>
+                          {item.photo ? <Image src={photoUrl(item.photo)!} alt={item.name} fill className="object-cover" unoptimized /> : <div style={{ display:'flex',alignItems:'center',justifyContent:'center',height:'100%',fontSize:20 }}>☕</div>}
+                        </div>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <p style={{ fontWeight:700, color:'#ffffff', fontSize:'0.95rem', marginBottom:4 }}>{item.name}</p>
+                          {item.description && <p style={{ fontSize:'0.75rem', color:'rgba(255,255,255,0.35)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.description}</p>}
+                        </div>
+                      </div>
+                      {/* meta row */}
+                      <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:12, alignItems:'center' }}>
+                        {item.category?.name && <span style={{ fontSize:'0.72rem', padding:'2px 10px', borderRadius:20, background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.55)' }}>{item.category.name}</span>}
+                        {item.branches.map(b => <span key={b.id} style={{ fontSize:'0.72rem', padding:'2px 10px', borderRadius:20, background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.55)' }}>{b.name}</span>)}
+                        <span style={{ fontSize:'0.8rem', color:'#ffffff', fontWeight:600, marginRight:'auto' }}>{formatPrice(item.price)}</span>
+                        <span style={{ fontSize:'0.72rem', padding:'2px 10px', borderRadius:20, fontWeight:500,
+                          background: item.is_available ? 'rgba(74,222,128,0.12)' : 'rgba(255,255,255,0.06)',
+                          color: item.is_available ? '#4ade80' : 'rgba(255,255,255,0.3)',
+                          border:`1px solid ${item.is_available ? 'rgba(74,222,128,0.25)' : 'rgba(255,255,255,0.1)'}` }}>
+                          {item.is_available ? 'موجود' : 'ناموجود'}
+                        </span>
+                      </div>
+                      {/* action buttons */}
+                      <div style={{ display:'flex', gap:8 }}>
+                        <button
+                          onClick={() => { setEditing(item); setShowForm(true); }}
+                          style={{ flex:1, padding:'8px 0', borderRadius:9, fontSize:'0.82rem', fontWeight:600, background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.15)', color:'#ffffff', cursor:'pointer' }}>
+                          ویرایش
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item)}
+                          style={{ flex:1, padding:'8px 0', borderRadius:9, fontSize:'0.82rem', fontWeight:600, background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.25)', color:'#f87171', cursor:'pointer' }}>
+                          حذف
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </>
         )}
@@ -813,12 +821,13 @@ export default function AdminPage() {
             </div>
           </>
         )}
-      </div>
 
         {/* ── Settings tab ── */}
         {tab === 'settings' && (
           <SettingsForm initial={cafeSettings} onSaved={setCafeSettings} />
         )}
+
+      </div>
 
       {showForm && (
         <ItemFormModal
@@ -833,6 +842,14 @@ export default function AdminPage() {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         select option { background: #1a1a1a; color: #ffffff; }
+        /* desktop: show table, hide cards */
+        .admin-table-wrap { display: block; }
+        .admin-cards-wrap { display: none; }
+        /* mobile: hide table, show cards */
+        @media (max-width: 640px) {
+          .admin-table-wrap { display: none; }
+          .admin-cards-wrap { display: flex; }
+        }
       `}</style>
     </div>
   );

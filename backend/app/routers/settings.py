@@ -14,7 +14,7 @@ async def _get_or_create(db: AsyncSession) -> Settings:
     result = await db.execute(select(Settings).where(Settings.id == 1))
     row = result.scalar_one_or_none()
     if row is None:
-        row = Settings(id=1, cafe_name="کافه ما", instagram="")
+        row = Settings(id=1, cafe_name="کافه ما", subtitle="لذت یک فنجان خوب، با هر سفارش", instagram="")
         db.add(row)
         await db.commit()
         await db.refresh(row)
@@ -34,6 +34,8 @@ async def update_settings(
     row = await _get_or_create(db)
     if data.cafe_name is not None:
         row.cafe_name = data.cafe_name.strip()
+    if data.subtitle is not None:
+        row.subtitle = data.subtitle.strip()
     if data.instagram is not None:
         row.instagram = data.instagram.strip().lstrip("@")
     await db.commit()

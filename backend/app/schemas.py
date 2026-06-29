@@ -64,6 +64,7 @@ class MenuItemOut(MenuItemBase):
 
 class SettingsOut(BaseModel):
     cafe_name: str
+    subtitle:  str
     instagram: str
 
     model_config = {"from_attributes": True}
@@ -71,6 +72,7 @@ class SettingsOut(BaseModel):
 
 class SettingsUpdate(BaseModel):
     cafe_name: Optional[str] = None
+    subtitle:  Optional[str] = None
     instagram: Optional[str] = None
 
 

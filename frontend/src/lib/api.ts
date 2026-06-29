@@ -1,7 +1,10 @@
 import axios, { AxiosInstance } from 'axios';
 
-export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// Empty string = relative URLs (same origin). Works perfectly behind Nginx
+// because /api/* and /media/* are proxied to backend on the same domain.
+// For local dev without Docker, set NEXT_PUBLIC_API_URL=http://localhost:8001
+export const API_URL: string =
+  process.env.NEXT_PUBLIC_API_URL ?? '';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -20,6 +23,7 @@ export interface Category {
 
 export interface CafeSettings {
   cafe_name: string;
+  subtitle: string;
   instagram: string;
 }
 
