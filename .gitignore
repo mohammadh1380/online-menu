@@ -6,3 +6,5 @@ celerybeat-schedule
 .idea/
 test.py
 logs.txt
+nginx/ssl/
+
