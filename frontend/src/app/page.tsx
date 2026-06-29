@@ -131,10 +131,6 @@ function BranchSelector({ branches, onSelect, settings }: { branches: Branch[]; 
           ))}
         </div>
 
-        {/* bottom label */}
-        <p className="mt-14 text-xs" style={{ color: 'rgba(255,255,255,0.15)' }}>
-          © ۱۴۰۳ کافه ما
-        </p>
       </div>
     </>
   );
