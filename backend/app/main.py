@@ -41,6 +41,10 @@ async def _run_migrations() -> None:
             ADD COLUMN IF NOT EXISTS subtitle VARCHAR(300)
                 NOT NULL DEFAULT 'لذت یک فنجان خوب، با هر سفارش'
         """))
+        await conn.execute(text("""
+            ALTER TABLE menu_items
+            ADD COLUMN IF NOT EXISTS "order" INTEGER NOT NULL DEFAULT 0
+        """))
 
 
 @asynccontextmanager

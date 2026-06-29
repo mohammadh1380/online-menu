@@ -39,6 +39,7 @@ class MenuItemBase(BaseModel):
     description: Optional[str] = None
     price: float
     is_available: bool = True
+    order: int = 0
     category_id: int
 
     @field_validator("price")

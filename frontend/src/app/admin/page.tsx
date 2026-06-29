@@ -45,18 +45,20 @@ interface ItemFormProps {
   branches: Branch[];
   categories: Category[];
   editing: MenuItem | null;
+  nextOrder: number;
   onClose: () => void;
   onSaved: () => void;
 }
 
-function ItemFormModal({ branches, categories, editing, onClose, onSaved }: ItemFormProps) {
+function ItemFormModal({ branches, categories, editing, nextOrder, onClose, onSaved }: ItemFormProps) {
   const [name, setName]               = useState(editing?.name ?? '');
   const [description, setDescription] = useState(editing?.description ?? '');
   const [price, setPrice]             = useState(editing?.price.toString() ?? '');
   const [categoryId, setCategoryId]   = useState(editing?.category_id.toString() ?? '');
   const [isAvailable, setIsAvailable] = useState(editing?.is_available ?? true);
+  const [order, setOrder]             = useState(editing?.order.toString() ?? nextOrder.toString());
   const [selectedBranches, setSelectedBranches] = useState<number[]>(
-    editing?.branches.map((b) => b.id) ?? []
+    editing?.branches.map((b) => b.id) ?? branches.map((b) => b.id)
   );
   const [photo, setPhoto]     = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(
@@ -94,6 +96,7 @@ function ItemFormModal({ branches, categories, editing, onClose, onSaved }: Item
     form.append('price', price);
     form.append('category_id', categoryId);
     form.append('is_available', isAvailable.toString());
+    form.append('order', order);
     selectedBranches.forEach((id) => form.append('branch_ids', id.toString()));
     if (photo) form.append('photo', photo);
 
@@ -205,6 +208,18 @@ function ItemFormModal({ branches, categories, editing, onClose, onSaved }: Item
                 onFocus={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)')}
                 onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
               />
+            </div>
+            <div>
+              <label style={labelStyle}>ترتیب نمایش</label>
+              <input
+                type="number" min="0" value={order} onChange={(e) => setOrder(e.target.value)}
+                style={inputStyle} placeholder="0"
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+              />
+              <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.25)', marginTop: 4 }}>
+                عدد کمتر = نمایش اول
+              </p>
             </div>
             <div>
               <label style={labelStyle}>دسته‌بندی *</label>
@@ -721,7 +736,7 @@ export default function AdminPage() {
                 </div>
 
                 {/* ── Mobile cards (hidden on desktop) ── */}
-                <div className="admin-cards-wrap" style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                <div className="admin-cards-wrap" style={{ flexDirection:'column', gap:10 }}>
                   {filteredItems.map(item => (
                     <div key={item.id} style={{ background:'rgba(17,17,17,0.85)', backdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:14 }}>
                       {/* top row: photo + info */}
@@ -834,6 +849,7 @@ export default function AdminPage() {
           branches={branches}
           categories={categories}
           editing={editing}
+          nextOrder={items.length > 0 ? Math.max(...items.map(i => i.order)) + 1 : 0}
           onClose={() => { setShowForm(false); setEditing(null); }}
           onSaved={fetchData}
         />

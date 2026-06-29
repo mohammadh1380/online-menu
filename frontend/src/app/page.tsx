@@ -202,14 +202,8 @@ function MenuCard({ item }: { item: MenuItem }) {
           )}
         </div>
 
-        {/* Bottom: status + price */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
-          <span style={{
-            fontSize: '0.7rem', padding: '3px 10px', borderRadius: 20,
-            background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.1)',
-          }}>
-            {item.is_available ? 'موجود' : 'ناموجود'}
-          </span>
+        {/* Bottom: price */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: 4 }}>
           <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#ffffff' }}>
             {formatPrice(item.price)}
           </span>

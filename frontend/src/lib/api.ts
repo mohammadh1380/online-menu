@@ -34,6 +34,7 @@ export interface MenuItem {
   price: number;
   photo: string | null;
   is_available: boolean;
+  order: number;
   category_id: number;
   category: Category | null;
   branches: Branch[];

@@ -75,7 +75,7 @@ async def get_menu(
         select(MenuItem)
         .options(selectinload(MenuItem.category), selectinload(MenuItem.branches))
         .where(MenuItem.is_available == True)  # noqa: E712
-        .order_by(MenuItem.category_id, MenuItem.name)
+        .order_by(MenuItem.order, MenuItem.id)
     )
     if branch_id:
         query = query.where(MenuItem.branches.any(Branch.id == branch_id))
@@ -96,7 +96,7 @@ async def admin_get_menu(db: AsyncSession = Depends(get_db)) -> list[MenuItem]:
     result = await db.execute(
         select(MenuItem)
         .options(selectinload(MenuItem.category), selectinload(MenuItem.branches))
-        .order_by(MenuItem.category_id, MenuItem.name)
+        .order_by(MenuItem.order, MenuItem.id)
     )
     return result.scalars().all()
 
@@ -112,6 +112,7 @@ async def create_item(
     category_id: int = Form(...),
     description: Optional[str] = Form(None),
     is_available: bool = Form(True),
+    order: int = Form(0),
     branch_ids: list[int] = Form(default=[]),
     photo: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db),
@@ -126,6 +127,7 @@ async def create_item(
         price=price,
         category_id=category_id,
         is_available=is_available,
+        order=order,
         photo=photo_filename,
     )
     item.branches = await _resolve_branches(db, branch_ids)
@@ -146,6 +148,7 @@ async def update_item(
     category_id: Optional[int] = Form(None),
     description: Optional[str] = Form(None),
     is_available: Optional[bool] = Form(None),
+    order: Optional[int] = Form(None),
     branch_ids: Optional[list[int]] = Form(default=None),
     photo: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db),
@@ -162,6 +165,8 @@ async def update_item(
         item.category_id = category_id
     if is_available is not None:
         item.is_available = is_available
+    if order is not None:
+        item.order = order
     if branch_ids is not None:
         item.branches = await _resolve_branches(db, branch_ids)
     if photo and photo.filename:

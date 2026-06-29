@@ -59,6 +59,7 @@ class MenuItem(Base):
     price:        Mapped[float]         = mapped_column(Float, nullable=False)
     photo:        Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     is_available: Mapped[bool]          = mapped_column(Boolean, default=True, nullable=False)
+    order:        Mapped[int]           = mapped_column(Integer, default=0, nullable=False)
     category_id:  Mapped[int]           = mapped_column(ForeignKey("categories.id"), nullable=False)
     created_at:   Mapped[datetime]      = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
