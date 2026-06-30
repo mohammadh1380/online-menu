@@ -46,10 +46,6 @@ function BranchSelector({ branches, onSelect, settings }: { branches: Branch[]; 
         style={{ position: 'relative', zIndex: 1 }}
       >
 
-        {/* top label */}
-        <p className="text-xs tracking-widest uppercase mb-10" style={{ color: 'rgba(255,255,255,0.25)', letterSpacing: '0.25em' }}>
-          COFFEE MENU
-        </p>
 
         {/* logo + title */}
         <div className="text-center mb-16">
@@ -325,26 +321,6 @@ export default function MenuPage() {
 
         <main className="mx-auto px-4 py-8" style={{ background: 'transparent', maxWidth: 1200 }}>
 
-          {/* Search */}
-          <div className="mb-6">
-            <div className="relative max-w-md mx-auto">
-              <input
-                type="text"
-                placeholder="جستجو در منو…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full px-5 py-3 rounded-xl text-sm outline-none"
-                style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  color: '#ffffff',
-                }}
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
-              />
-              <span className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'rgba(255,255,255,0.3)' }}>🔍</span>
-            </div>
-          </div>
 
           {/* Category tabs */}
           <div className="flex flex-wrap gap-2 justify-center mb-8">

@@ -497,7 +497,8 @@ export default function AdminPage() {
   const [loading, setLoading]       = useState(true);
   const [showForm, setShowForm]     = useState(false);
   const [editing, setEditing]       = useState<MenuItem | null>(null);
-  const [search, setSearch]         = useState('');
+  const [search, setSearch]             = useState('');
+  const [adminCategory, setAdminCategory] = useState<number | null>(null);
   const [cafeSettings, setCafeSettings] = useState<CafeSettings>({ cafe_name: 'کافه ما', subtitle: 'لذت یک فنجان خوب، با هر سفارش', instagram: '' });
 
   async function fetchData() {
@@ -532,9 +533,9 @@ export default function AdminPage() {
     fetchData();
   }
 
-  const filteredItems = search.trim()
-    ? items.filter((i) => i.name.includes(search) || i.category?.name.includes(search))
-    : items;
+  const filteredItems = items
+    .filter((i) => adminCategory === null || i.category_id === adminCategory)
+    .filter((i) => !search.trim() || i.name.includes(search) || i.category?.name.includes(search));
 
   const thStyle: React.CSSProperties = {
     padding: '12px 16px',
@@ -625,6 +626,25 @@ export default function AdminPage() {
         {/* ── Items tab ── */}
         {tab === 'items' && (
           <>
+            {/* Category filter */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+              {[{ id: null, name: 'همه' }, ...categories.map(c => ({ id: c.id, name: c.name }))].map(cat => (
+                <button
+                  key={cat.id ?? 'all'}
+                  onClick={() => setAdminCategory(cat.id)}
+                  style={{
+                    padding: '6px 16px', borderRadius: 999, fontSize: '0.8rem', cursor: 'pointer', transition: 'all .15s',
+                    ...(adminCategory === cat.id
+                      ? { background: '#ffffff', color: '#111', border: '1px solid #ffffff', fontWeight: 600 }
+                      : { background: 'transparent', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.15)' }
+                    )
+                  }}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+
             <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
               <input
                 type="text" placeholder="جستجو…" value={search}
