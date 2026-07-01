@@ -11,7 +11,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB:       ${POSTGRES_DB:-coffee_menu}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - /mnt/hdd/menu/postgresql:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 5s
@@ -28,7 +28,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-coffee_menu}
     volumes:
-      - media_files:/app/media
+      - /mnt/hdd/menu/media:/app/media
     expose:
       - "8001"
     depends_on:
@@ -73,6 +73,6 @@ services:
       - ssl   # only runs when you explicitly request it
 
 volumes:
-  postgres_data:
-  media_files:
+  # postgres_data:
+  # media_files:
   certbot_www:
