@@ -69,6 +69,7 @@ async def _resolve_branches(db: AsyncSession, branch_ids: list[int]) -> list[Bra
 async def get_menu(
     branch_id: Optional[int] = None,
     category_id: Optional[int] = None,
+    featured: Optional[bool] = None,
     db: AsyncSession = Depends(get_db),
 ) -> list[MenuItem]:
     query = (
@@ -81,6 +82,8 @@ async def get_menu(
         query = query.where(MenuItem.branches.any(Branch.id == branch_id))
     if category_id:
         query = query.where(MenuItem.category_id == category_id)
+    if featured is not None:
+        query = query.where(MenuItem.is_featured == featured)  # noqa: E712
     result = await db.execute(query)
     return result.scalars().all()
 
@@ -112,6 +115,7 @@ async def create_item(
     category_id: int = Form(...),
     description: Optional[str] = Form(None),
     is_available: bool = Form(True),
+    is_featured: bool = Form(False),
     order: int = Form(0),
     branch_ids: list[int] = Form(default=[]),
     photo: Optional[UploadFile] = File(None),
@@ -127,6 +131,7 @@ async def create_item(
         price=price,
         category_id=category_id,
         is_available=is_available,
+        is_featured=is_featured,
         order=order,
         photo=photo_filename,
     )
@@ -148,6 +153,7 @@ async def update_item(
     category_id: Optional[int] = Form(None),
     description: Optional[str] = Form(None),
     is_available: Optional[bool] = Form(None),
+    is_featured: Optional[bool] = Form(None),
     order: Optional[int] = Form(None),
     branch_ids: Optional[list[int]] = Form(default=None),
     photo: Optional[UploadFile] = File(None),
@@ -165,6 +171,8 @@ async def update_item(
         item.category_id = category_id
     if is_available is not None:
         item.is_available = is_available
+    if is_featured is not None:
+        item.is_featured = is_featured
     if order is not None:
         item.order = order
     if branch_ids is not None:

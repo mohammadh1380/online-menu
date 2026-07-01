@@ -34,6 +34,7 @@ export interface MenuItem {
   price: number;
   photo: string | null;
   is_available: boolean;
+  is_featured: boolean;
   order: number;
   category_id: number;
   category: Category | null;
@@ -50,11 +51,12 @@ export const getBranches   = () => api.get<Branch[]>('/api/branches');
 export const getCategories = () => api.get<Category[]>('/api/categories');
 export const getSettings   = () => api.get<CafeSettings>('/api/settings');
 
-export const getMenu = (branchId?: number, categoryId?: number) =>
+export const getMenu = (branchId?: number, categoryId?: number, featured?: boolean) =>
   api.get<MenuItem[]>('/api/menu', {
     params: {
       ...(branchId   ? { branch_id:   branchId   } : {}),
       ...(categoryId ? { category_id: categoryId } : {}),
+      ...(featured   ? { featured:    true        } : {}),
     },
   });
 

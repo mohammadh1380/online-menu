@@ -56,6 +56,7 @@ function ItemFormModal({ branches, categories, editing, nextOrder, onClose, onSa
   const [price, setPrice]             = useState(editing?.price.toString() ?? '');
   const [categoryId, setCategoryId]   = useState(editing?.category_id.toString() ?? '');
   const [isAvailable, setIsAvailable] = useState(editing?.is_available ?? true);
+  const [isFeatured, setIsFeatured]   = useState(editing?.is_featured ?? false);
   const [order, setOrder]             = useState(editing?.order.toString() ?? nextOrder.toString());
   const [selectedBranches, setSelectedBranches] = useState<number[]>(
     editing?.branches.map((b) => b.id) ?? branches.map((b) => b.id)
@@ -96,6 +97,7 @@ function ItemFormModal({ branches, categories, editing, nextOrder, onClose, onSa
     form.append('price', price);
     form.append('category_id', categoryId);
     form.append('is_available', isAvailable.toString());
+    form.append('is_featured', isFeatured.toString());
     form.append('order', order);
     selectedBranches.forEach((id) => form.append('branch_ids', id.toString()));
     if (photo) form.append('photo', photo);
@@ -273,6 +275,20 @@ function ItemFormModal({ branches, categories, editing, nextOrder, onClose, onSa
               style={{ width: 16, height: 16, accentColor: '#ffffff' }}
             />
             <span style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)' }}>موجود در منو</span>
+          </label>
+
+          {/* Featured toggle */}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+            <input
+              type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)}
+              style={{ width: 16, height: 16, accentColor: '#f59e0b' }}
+            />
+            <span style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)' }}>
+              پیشنهاد روز
+              <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', marginRight: 6 }}>
+                (در صفحه اول منو نمایش داده می‌شود)
+              </span>
+            </span>
           </label>
 
           {error && (
@@ -498,7 +514,7 @@ export default function AdminPage() {
   const [showForm, setShowForm]     = useState(false);
   const [editing, setEditing]       = useState<MenuItem | null>(null);
   const [search, setSearch]             = useState('');
-  const [adminCategory, setAdminCategory] = useState<number | null>(null);
+  const [adminCategory, setAdminCategory] = useState<number | null | 'featured'>(null);
   const [cafeSettings, setCafeSettings] = useState<CafeSettings>({ cafe_name: 'کافه ما', subtitle: 'لذت یک فنجان خوب، با هر سفارش', instagram: '' });
 
   async function fetchData() {
@@ -534,7 +550,7 @@ export default function AdminPage() {
   }
 
   const filteredItems = items
-    .filter((i) => adminCategory === null || i.category_id === adminCategory)
+    .filter((i) => adminCategory === null || (adminCategory === 'featured' ? i.is_featured : i.category_id === adminCategory))
     .filter((i) => !search.trim() || i.name.includes(search) || i.category?.name.includes(search));
 
   const thStyle: React.CSSProperties = {
@@ -628,19 +644,48 @@ export default function AdminPage() {
           <>
             {/* Category filter */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
-              {[{ id: null, name: 'همه' }, ...categories.map(c => ({ id: c.id, name: c.name }))].map(cat => (
+              {/* همه */}
+              <button
+                onClick={() => setAdminCategory(null)}
+                style={{
+                  padding: '6px 16px', borderRadius: 999, fontSize: '0.8rem', cursor: 'pointer', transition: 'all .15s',
+                  ...(adminCategory === null
+                    ? { background: '#ffffff', color: '#111', border: '1px solid #ffffff', fontWeight: 600 }
+                    : { background: 'transparent', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.15)' }
+                  )
+                }}
+              >
+                همه
+              </button>
+
+              {/* پیشنهاد روز */}
+              <button
+                onClick={() => setAdminCategory('featured')}
+                style={{
+                  padding: '6px 16px', borderRadius: 999, fontSize: '0.8rem', cursor: 'pointer', transition: 'all .15s',
+                  ...(adminCategory === 'featured'
+                    ? { background: '#f59e0b', color: '#111', border: '1px solid #f59e0b', fontWeight: 600 }
+                    : { background: 'transparent', color: 'rgba(245,158,11,0.7)', border: '1px solid rgba(245,158,11,0.35)' }
+                  )
+                }}
+              >
+                ⭐ پیشنهاد روز
+              </button>
+
+              {/* real categories */}
+              {categories.map(c => (
                 <button
-                  key={cat.id ?? 'all'}
-                  onClick={() => setAdminCategory(cat.id)}
+                  key={c.id}
+                  onClick={() => setAdminCategory(c.id)}
                   style={{
                     padding: '6px 16px', borderRadius: 999, fontSize: '0.8rem', cursor: 'pointer', transition: 'all .15s',
-                    ...(adminCategory === cat.id
+                    ...(adminCategory === c.id
                       ? { background: '#ffffff', color: '#111', border: '1px solid #ffffff', fontWeight: 600 }
                       : { background: 'transparent', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.15)' }
                     )
                   }}
                 >
-                  {cat.name}
+                  {c.name}
                 </button>
               ))}
             </div>
@@ -709,7 +754,10 @@ export default function AdminPage() {
                             </div>
                           </td>
                           <td style={tdStyle}>
-                            <p style={{ fontWeight: 600, color: '#ffffff', marginBottom: 2 }}>{item.name}</p>
+                            <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:2 }}>
+                              <p style={{ fontWeight: 600, color: '#ffffff' }}>{item.name}</p>
+                              {item.is_featured && <span style={{ fontSize:'0.65rem', padding:'1px 7px', borderRadius:20, background:'rgba(245,158,11,0.15)', border:'1px solid rgba(245,158,11,0.4)', color:'#f59e0b', whiteSpace:'nowrap' }}>پیشنهاد روز</span>}
+                            </div>
                             {item.description && <p style={{ fontSize:'0.75rem', color:'rgba(255,255,255,0.3)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:160 }}>{item.description}</p>}
                           </td>
                           <td style={tdStyle}>

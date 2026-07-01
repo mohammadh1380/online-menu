@@ -45,6 +45,10 @@ async def _run_migrations() -> None:
             ALTER TABLE menu_items
             ADD COLUMN IF NOT EXISTS "order" INTEGER NOT NULL DEFAULT 0
         """))
+        await conn.execute(text("""
+            ALTER TABLE menu_items
+            ADD COLUMN IF NOT EXISTS is_featured BOOLEAN NOT NULL DEFAULT FALSE
+        """))
 
 
 @asynccontextmanager

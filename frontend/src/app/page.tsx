@@ -208,15 +208,16 @@ function MenuCard({ item }: { item: MenuItem }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function MenuPage() {
-  const [branches, setBranches]             = useState<Branch[]>([]);
-  const [activeBranch, setActiveBranch]     = useState<Branch | null>(null);
-  const [categories, setCategories]         = useState<Category[]>([]);
-  const [items, setItems]                   = useState<MenuItem[]>([]);
-  const [activeCategory, setActiveCategory] = useState<number | null>(null);
-  const [search, setSearch]                 = useState('');
-  const [loading, setLoading]               = useState(false);
+  const [branches, setBranches]         = useState<Branch[]>([]);
+  const [activeBranch, setActiveBranch] = useState<Branch | null>(null);
+  const [categories, setCategories]     = useState<Category[]>([]);
+  const [items, setItems]               = useState<MenuItem[]>([]);
+  // 'featured' = پیشنهاد روز tab; number = category id
+  const [activeTab, setActiveTab]       = useState<'featured' | number>('featured');
+  const [search, setSearch]             = useState('');
+  const [loading, setLoading]           = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [cafeSettings, setCafeSettings]     = useState<CafeSettings>({ cafe_name: 'کافه ما', subtitle: 'لذت یک فنجان خوب، با هر سفارش', instagram: '' });
+  const [cafeSettings, setCafeSettings] = useState<CafeSettings>({ cafe_name: 'کافه ما', subtitle: 'لذت یک فنجان خوب، با هر سفارش', instagram: '' });
 
   useEffect(() => {
     Promise.all([
@@ -229,14 +230,16 @@ export default function MenuPage() {
   useEffect(() => {
     if (!activeBranch) return;
     setLoading(true);
-    getMenu(activeBranch.id, activeCategory ?? undefined)
+    const catId    = activeTab !== 'featured' ? activeTab : undefined;
+    const featured = activeTab === 'featured' ? true : undefined;
+    getMenu(activeBranch.id, catId, featured)
       .then((r) => setItems(r.data))
       .finally(() => setLoading(false));
-  }, [activeBranch, activeCategory]);
+  }, [activeBranch, activeTab]);
 
   function selectBranch(b: Branch) {
     setActiveBranch(b);
-    setActiveCategory(null);
+    setActiveTab('featured');
     setSearch('');
   }
 
@@ -324,13 +327,25 @@ export default function MenuPage() {
 
           {/* Category tabs */}
           <div className="flex flex-wrap gap-2 justify-center mb-8">
-            {[{ id: null, name: 'همه' }, ...categories.map(c => ({ id: c.id, name: c.name }))].map((cat) => (
+            {/* پیشنهاد روز — always first */}
+            <button
+              onClick={() => setActiveTab('featured')}
+              className="px-5 py-2 rounded-full text-sm font-medium transition-all duration-200"
+              style={
+                activeTab === 'featured'
+                  ? { background: '#f59e0b', color: '#0d0d0d' }
+                  : { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.1)' }
+              }
+            >
+              ⭐ پیشنهاد روز
+            </button>
+            {categories.map((cat) => (
               <button
-                key={cat.id ?? 'all'}
-                onClick={() => setActiveCategory(cat.id)}
+                key={cat.id}
+                onClick={() => setActiveTab(cat.id)}
                 className="px-5 py-2 rounded-full text-sm font-medium transition-all duration-200"
                 style={
-                  activeCategory === cat.id
+                  activeTab === cat.id
                     ? { background: '#ffffff', color: '#0d0d0d' }
                     : { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.1)' }
                 }
@@ -347,8 +362,8 @@ export default function MenuPage() {
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-24" style={{ color: 'rgba(255,255,255,0.25)' }}>
-              <span className="text-5xl block mb-4">☕</span>
-              <p>آیتمی یافت نشد</p>
+              <span className="text-5xl block mb-4">{activeTab === 'featured' ? '⭐' : '☕'}</span>
+              <p>{activeTab === 'featured' ? 'هنوز پیشنهادی انتخاب نشده' : 'آیتمی یافت نشد'}</p>
             </div>
           ) : (
             <>
